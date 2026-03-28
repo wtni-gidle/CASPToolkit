@@ -7,7 +7,7 @@ import argparse
 import tempfile
 import logging
 
-from sup_assemble import sup_assemble
+from casptoolkit.CASP.sup_assemble import sup_assemble
 
 logging.basicConfig(level=logging.INFO)
 

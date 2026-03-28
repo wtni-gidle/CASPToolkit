@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "CASPToolkit"
+version = "0.1.0"
+description = "CASP-focused protein structure processing and workflow toolkit"
+requires-python = ">=3.9"
+dependencies = [
+    "biopython>=1.79",
+    "pandas>=1.5",
+    "numpy>=1.23",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["casptoolkit*"]

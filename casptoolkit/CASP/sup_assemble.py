@@ -7,8 +7,8 @@ import tempfile
 import argparse
 import logging
 
-from PDBToolkit.PDBOps.merge_structure import merge_structures
-from PDBToolkit.config import USALIGN_PATH
+from casptoolkit.PDBOps.merge_structure import merge_structures
+from casptoolkit.config import USALIGN_PATH
 
 logging.basicConfig(level=logging.INFO)
 
@@ -29,7 +29,7 @@ def run_usalign(model, reference, output_prefix, extra_args = None):
 
 def sup_assemble(source_file, target_dir, output_path, renumber = True, extra_args = None):
     output_path = os.path.abspath(output_path)
-    dirname = os.path.basename(output_path)
+    dirname = os.path.dirname(output_path)
     os.makedirs(dirname, exist_ok=True)
     with tempfile.TemporaryDirectory() as temp_dir:
         sup_structures = []

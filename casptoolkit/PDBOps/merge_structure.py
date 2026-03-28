@@ -7,7 +7,7 @@ import os
 import argparse
 import logging
 
-from renumber_atom import renumber_atom
+from casptoolkit.PDBOps.renumber_atom import renumber_atom
 
 
 logging.basicConfig(level=logging.INFO)
