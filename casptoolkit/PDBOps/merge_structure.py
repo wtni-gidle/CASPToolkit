@@ -9,15 +9,15 @@ from typing import List
 
 from Bio import PDB
 
-from casptoolkit.PDBOps._utils import print_settings
-from casptoolkit.PDBOps.renumber_atom import renumber_atom
+from casptoolkit.PDBOps._utils import print_cli_settings
+from casptoolkit.PDBOps.renumber_atoms import renumber_atoms
 
 LOGGER = logging.getLogger(__name__)
 
 _CHAIN_IDS = list("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
 
 
-def merge_structures(
+def merge_pdb_files(
     input_files: List[str],
     output_file: str,
     renumber: bool = False,
@@ -53,7 +53,7 @@ def merge_structures(
             model.add(new_chain)
 
     if renumber:
-        renumber_atom(structure, str(out))
+        renumber_atoms(structure, str(out))
     else:
         io = PDB.PDBIO()
         io.set_structure(structure)
@@ -65,7 +65,7 @@ def merge_structures(
 def main(args: argparse.Namespace) -> None:
     input_files = sorted(Path(args.input_dir).iterdir())
     input_files = [str(f) for f in input_files if f.suffix == ".pdb"]
-    merge_structures(input_files, args.output_file, args.renumber)
+    merge_pdb_files(input_files, args.output_file, args.renumber_atoms)
 
 
 if __name__ == "__main__":
@@ -74,8 +74,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Merge multiple PDB files into one. This will reassign chain IDs automatically.")
     parser.add_argument("input_dir", help="Input directory containing PDB files.")
     parser.add_argument("output_file", help="Output merged PDB file path.")
-    parser.add_argument("--renumber", action="store_true", help="Renumber atom serial numbers.")
+    parser.add_argument("--renumber_atoms", action="store_true", help="Renumber atom serial numbers.")
     args = parser.parse_args()
 
-    print_settings(args)
+    print_cli_settings(args)
     main(args)

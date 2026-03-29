@@ -9,7 +9,7 @@ from Bio.PDB.Chain import Chain
 from Bio.PDB.Model import Model
 
 
-def print_settings(args: argparse.Namespace) -> None:
+def print_cli_settings(args: argparse.Namespace) -> None:
     """Print user settings to stdout in a consistent format."""
     sep = "-" * 59
     print(sep, flush=True)
@@ -43,11 +43,11 @@ def sort_chains(model: Model, chain_order: Optional[List[str]] = None) -> List[C
         if model_ids != order_ids:
             missing = model_ids - order_ids
             extra = order_ids - model_ids
-            parts = []
+            mismatch_details = []
             if missing:
-                parts.append(f"missing from chain_order: {sorted(missing)}")
+                mismatch_details.append(f"missing from chain_order: {sorted(missing)}")
             if extra:
-                parts.append(f"not in model: {sorted(extra)}")
-            raise ValueError("chain_order mismatch — " + "; ".join(parts))
+                mismatch_details.append(f"not in model: {sorted(extra)}")
+            raise ValueError("chain_order mismatch — " + "; ".join(mismatch_details))
         return sorted(model, key=lambda c: chain_order.index(c.id))
     return sorted(model, key=lambda c: (c.id.isdigit(), c.id))

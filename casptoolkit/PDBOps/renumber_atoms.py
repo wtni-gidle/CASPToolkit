@@ -13,7 +13,7 @@ from casptoolkit.PDBOps._utils import sort_chains
 LOGGER = logging.getLogger(__name__)
 
 
-def renumber_atom(
+def renumber_atoms(
     structure: PDB.Structure.Structure,
     output_path: str,
     chain_order: Optional[List[str]] = None,

@@ -7,7 +7,7 @@ import tempfile
 import argparse
 import logging
 
-from casptoolkit.PDBOps.merge_structure import merge_structures
+from casptoolkit.PDBOps.merge_structure import merge_pdb_files
 from casptoolkit.config import USALIGN_PATH
 
 logging.basicConfig(level=logging.INFO)
@@ -40,7 +40,7 @@ def sup_assemble(source_file, target_dir, output_path, renumber = True, extra_ar
                 run_usalign(source_file, target_file, output_prefix, extra_args)
                 sup_structures.append(output_prefix + ".pdb")
 
-        merge_structures(sup_structures, output_path, renumber=renumber)
+        merge_pdb_files(sup_structures, output_path, renumber=renumber)
 
 
 def main(args):

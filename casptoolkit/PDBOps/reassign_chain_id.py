@@ -10,8 +10,8 @@ from typing import Dict, List, Optional
 
 from Bio import PDB
 
-from casptoolkit.PDBOps._utils import print_settings, sort_chains
-from casptoolkit.PDBOps.renumber_atom import renumber_atom
+from casptoolkit.PDBOps._utils import print_cli_settings, sort_chains
+from casptoolkit.PDBOps.renumber_atoms import renumber_atoms
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,22 +45,22 @@ def reassign_chain_id(
     parser = PDB.PDBParser(QUIET=True)
     model = parser.get_structure("structure", input_path)[0]
 
-    model_ids = {c.id for c in model}
+    source_chain_ids = {c.id for c in model}
     map_keys = set(chain_map)
-    if model_ids != map_keys:
-        missing = model_ids - map_keys
-        extra = map_keys - model_ids
-        parts = []
+    if source_chain_ids != map_keys:
+        missing = source_chain_ids - map_keys
+        extra = map_keys - source_chain_ids
+        mismatch_details = []
         if missing:
-            parts.append(f"chains not in chain_map: {sorted(missing)}")
+            mismatch_details.append(f"chains not in chain_map: {sorted(missing)}")
         if extra:
-            parts.append(f"chain_map keys not in model: {sorted(extra)}")
-        raise ValueError("chain_map mismatch — " + "; ".join(parts))
+            mismatch_details.append(f"chain_map keys not in model: {sorted(extra)}")
+        raise ValueError("chain_map mismatch — " + "; ".join(mismatch_details))
 
-    new_values = list(chain_map.values())
-    if len(new_values) != len(set(new_values)):
+    target_chain_ids = list(chain_map.values())
+    if len(target_chain_ids) != len(set(target_chain_ids)):
         raise ValueError("chain_map contains duplicate target chain IDs.")
-    if any(len(v) != 1 for v in new_values):
+    if any(len(v) != 1 for v in target_chain_ids):
         raise ValueError("All target chain IDs in chain_map must be single characters.")
 
     new_structure = PDB.Structure.Structure("new_structure")
@@ -68,18 +68,17 @@ def reassign_chain_id(
     new_structure.add(new_model)
 
     for chain in model:
-        new_chain = PDB.Chain.Chain(chain_map[chain.id])
-        for residue in chain:
-            new_chain.add(residue.copy())
+        new_chain = chain.copy()
+        new_chain.id = chain_map[chain.id]
         new_model.add(new_chain)
 
     if renumber:
-        renumber_atom(new_structure, str(out), chain_order=chain_order)
+        renumber_atoms(new_structure, str(out), chain_order=chain_order)
     else:
-        ordered = sort_chains(new_model, chain_order)
+        ordered_chains = sort_chains(new_model, chain_order)
         for chain_id in [c.id for c in new_model.get_list()]:
             new_model.detach_child(chain_id)
-        for chain in ordered:
+        for chain in ordered_chains:
             new_model.add(chain)
         io = PDB.PDBIO()
         io.set_structure(new_structure)
@@ -103,13 +102,7 @@ def reassign_chain_id_in_parallel(
         chain_order: Explicit output chain order.
         renumber: If True, renumber atom serial numbers after reassignment.
         n_cpu: Number of worker processes.
-
-    Raises:
-        ValueError: If n_cpu < 1.
     """
-    if n_cpu < 1:
-        raise ValueError(f"n_cpu must be >= 1, got {n_cpu}.")
-
     in_dir = Path(input_dir)
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -134,13 +127,19 @@ def _parse_chain_mapping(chain_mapping: str) -> Dict[str, str]:
         raise ValueError(
             f"Invalid chain_mapping '{chain_mapping}': expected format 'ABC:DEF'."
         )
-    orig, new = chain_mapping.split(":", 1)
-    if len(orig) != len(new):
+    src_ids, dst_ids = chain_mapping.split(":", 1)
+    if len(src_ids) != len(dst_ids):
         raise ValueError(
             f"chain_mapping '{chain_mapping}': both sides must have the same length "
-            f"({len(orig)} vs {len(new)})."
+            f"({len(src_ids)} vs {len(dst_ids)})."
         )
-    return dict(zip(orig, new))
+
+    if len(set(src_ids)) != len(src_ids) or len(set(dst_ids)) != len(dst_ids):
+        raise ValueError(
+            f"chain_mapping '{chain_mapping}': chain IDs must be unique on both sides."
+        )
+
+    return dict(zip(src_ids, dst_ids))
 
 
 def main(args: argparse.Namespace) -> None:
@@ -153,10 +152,17 @@ def main(args: argparse.Namespace) -> None:
 
     if input_path.is_dir():
         reassign_chain_id_in_parallel(
-            str(input_path), args.output_path, chain_map, chain_order, args.renumber, args.n_cpu
+            str(input_path),
+            args.output_path,
+            chain_map,
+            chain_order,
+            args.renumber_atoms,
+            args.num_workers,
         )
     else:
-        reassign_chain_id(str(input_path), args.output_path, chain_map, chain_order, args.renumber)
+        reassign_chain_id(
+            str(input_path), args.output_path, chain_map, chain_order, args.renumber_atoms
+        )
     LOGGER.info("Done.")
 
 
@@ -170,10 +176,10 @@ if __name__ == "__main__":
     parser.add_argument("input_path", type=str, help="Path to the input PDB file or directory.")
     parser.add_argument("output_path", type=str, help="Path to the output PDB file or directory.")
     parser.add_argument("chain_mapping", type=str, help="Chain ID mapping, e.g. 'ABC:DEF' maps A→D, B→E, C→F.")
-    parser.add_argument("--renumber", action="store_true", help="Renumber atom serial numbers.")
+    parser.add_argument("--renumber_atoms", action="store_true", help="Renumber atom serial numbers.")
     parser.add_argument("--chain_order", type=str, default=None, help="Output chain order.")
-    parser.add_argument("--n_cpu", type=int, default=1, help="Number of worker processes (default: 1).")
+    parser.add_argument("--num_workers", type=int, default=1, help="Number of worker processes (default: 1).")
     args = parser.parse_args()
 
-    print_settings(args)
+    print_cli_settings(args)
     main(args)

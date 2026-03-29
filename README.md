@@ -35,7 +35,7 @@ export CASPTOOLKIT_PHENIX_CLASHSCORE_PATH=/path/to/phenix.clashscore
 
 ```bash
 python casptoolkit/PDBOps/cif2pdb.py input.cif output.pdb
-python casptoolkit/PDBOps/cif2pdb.py input_dir/ output_dir/ --n_cpu 8
+python casptoolkit/PDBOps/cif2pdb.py input_dir/ output_dir/ --num_workers 8
 ```
 
 输入：单个 .cif 文件或目录。
@@ -43,7 +43,7 @@ python casptoolkit/PDBOps/cif2pdb.py input_dir/ output_dir/ --n_cpu 8
 
 ### 2) 原子序号重编号
 
-脚本：casptoolkit/PDBOps/renumber_atom.py
+脚本：casptoolkit/PDBOps/renumber_atoms.py
 
 说明：该模块主要作为函数被其他脚本调用，用于处理大结构中原子序号超过 PDB 上限的问题。
 
@@ -63,10 +63,10 @@ python casptoolkit/PDBOps/merge_structure.py input_dir/ merged.pdb
 脚本：casptoolkit/PDBOps/reassign_chain_id.py
 
 ```bash
-python casptoolkit/PDBOps/reassign_chain_id.py input.pdb output.pdb ABC DEF
+python casptoolkit/PDBOps/reassign_chain_id.py input.pdb output.pdb ABC:DEF
 ```
 
-输入：PDB 文件 + 原链名序列 + 新链名序列。
+输入：PDB 文件 + 链映射字符串（如 ABC:DEF，表示 A->D, B->E, C->F）。
 输出：链名重排后的 PDB 文件。
 
 ### 5) 计算 clashscore
@@ -143,7 +143,9 @@ export CASPTOOLKIT_PHENIX_CLASHSCORE_PATH=/path/to/phenix.clashscore
 
 ### 2) 如何选择并行参数
 
-优先从较小值开始测试（如 --n_cpu 2 或 4），再根据机器资源增大。
+PDBOps 脚本使用 `--num_workers`，CASP 脚本使用 `--n_cpu`。
+
+优先从较小值开始测试（如 `--num_workers 2` 或 `--n_cpu 2`），再根据机器资源增大。
 
 ### 3) 为什么有些脚本支持目录，有些只支持文件
 

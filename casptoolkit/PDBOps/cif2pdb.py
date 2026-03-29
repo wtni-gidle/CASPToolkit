@@ -7,8 +7,8 @@ from pathlib import Path
 
 from Bio import PDB
 
-from casptoolkit.PDBOps._utils import print_settings
-from casptoolkit.PDBOps.renumber_atom import renumber_atom
+from casptoolkit.PDBOps._utils import print_cli_settings
+from casptoolkit.PDBOps.renumber_atoms import renumber_atoms
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def cif_to_pdb(input_path: str, output_path: str, renumber: bool = False) -> Non
         raise ValueError(f"Failed to parse CIF file: {input_file}") from exc
 
     if renumber:
-        renumber_atom(structure, output_file.as_posix())
+        renumber_atoms(structure, output_file.as_posix())
     else:
         io = PDB.PDBIO()
         io.set_structure(structure)
@@ -68,13 +68,16 @@ def cif_to_pdb_in_parallel(
 def _resolve_single_output_path(input_path: str, output_path: str) -> str:
     """Resolve output path for single-file conversion.
 
-    If output_path is an existing directory, write <input_stem>.pdb under it.
+    If output_path does not end with '.pdb', treat it as a directory and
+    write <input_stem>.pdb under it.
     """
     input_file = Path(input_path)
-    output_target = Path(output_path)
-    if output_target.is_dir():
-        return (output_target / f"{input_file.stem}.pdb").as_posix()
-    return output_target.as_posix()
+    if output_path.lower().endswith(".pdb"):
+        return Path(output_path).resolve().as_posix()
+
+    output_dir = Path(output_path).resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return (output_dir / f"{input_file.stem}.pdb").as_posix()
 
 
 def main(args) -> None:
@@ -86,13 +89,15 @@ def main(args) -> None:
 
     if input_path.is_file():
         resolved_output_path = _resolve_single_output_path(str(input_path), str(output_path))
-        cif_to_pdb(str(input_path), resolved_output_path, args.renumber)
+        cif_to_pdb(str(input_path), resolved_output_path, args.renumber_atoms)
     else:
         if output_path.is_file():
             raise ValueError(
                 "When input_path is a directory, output_path must be a directory path."
             )
-        cif_to_pdb_in_parallel(str(input_path), str(output_path), args.renumber, args.n_cpu)
+        cif_to_pdb_in_parallel(
+            str(input_path), str(output_path), args.renumber_atoms, args.num_workers
+        )
     LOGGER.info("Done.")
 
 
@@ -102,9 +107,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert CIF files to PDB files.')
     parser.add_argument('input_path', type=str, help='Path to the input CIF file or directory.')
     parser.add_argument('output_path', type=str, help='Path to the output PDB file or directory.')
-    parser.add_argument('--renumber', action='store_true', help='Renumber atoms in the structure.')
-    parser.add_argument('--n_cpu', type=int, default=1, help='Number of CPUs to use for parallel processing.')
+    parser.add_argument('--renumber_atoms', action='store_true', help='Renumber atoms in the structure.')
+    parser.add_argument('--num_workers', type=int, default=1, help='Number of worker processes.')
     args = parser.parse_args()
 
-    print_settings(args)
+    print_cli_settings(args)
     main(args)
