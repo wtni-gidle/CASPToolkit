@@ -1,20 +1,16 @@
+"""Convert mmCIF files to PDB format."""
+
 import argparse
 import logging
-import os
 from multiprocessing import Pool
 from pathlib import Path
 
 from Bio import PDB
 
+from casptoolkit.PDBOps._utils import print_settings
 from casptoolkit.PDBOps.renumber_atom import renumber_atom
 
-logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
-
-
-def _validate_n_cpu(n_cpu: int) -> None:
-    if n_cpu < 1:
-        raise ValueError(f"n_cpu must be >= 1, got {n_cpu}.")
 
 
 def cif_to_pdb(input_path: str, output_path: str, renumber: bool = False) -> None:
@@ -48,7 +44,6 @@ def cif_to_pdb_in_parallel(
     n_cpu: int = 1,
 ) -> None:
     """Convert all CIF files in a directory to PDB files."""
-    _validate_n_cpu(n_cpu)
     input_directory = Path(input_dir)
     output_directory = Path(output_dir)
 
@@ -58,12 +53,10 @@ def cif_to_pdb_in_parallel(
     output_directory.mkdir(parents=True, exist_ok=True)
 
     total_args = []
-    for filename in sorted(os.listdir(input_directory.as_posix())):
-        if filename.lower().endswith(".cif"):
-            input_path = input_directory / filename
-            output_filename = f"{input_path.stem}.pdb"
-            output_path = output_directory / output_filename
-            total_args.append((input_path.as_posix(), output_path.as_posix(), renumber))
+    for cif_file in sorted(input_directory.iterdir()):
+        if cif_file.suffix.lower() == ".cif":
+            output_path = output_directory / f"{cif_file.stem}.pdb"
+            total_args.append((cif_file.as_posix(), output_path.as_posix(), renumber))
 
     if not total_args:
         raise ValueError(f"No CIF files found in input directory: {input_directory}")
@@ -84,27 +77,28 @@ def _resolve_single_output_path(input_path: str, output_path: str) -> str:
     return output_target.as_posix()
 
 
-def main(args: argparse.Namespace) -> None:
-    _validate_n_cpu(args.n_cpu)
-    input_path = os.path.abspath(args.input_path)
-    output_path = os.path.abspath(args.output_path)
+def main(args) -> None:
+    input_path = Path(args.input_path).resolve()
+    output_path = Path(args.output_path).resolve()
 
-    if not os.path.exists(input_path):
+    if not input_path.exists():
         raise FileNotFoundError(f"Input path does not exist: {input_path}")
 
-    if os.path.isfile(input_path):
-        resolved_output_path = _resolve_single_output_path(input_path, output_path)
-        cif_to_pdb(input_path, resolved_output_path, args.renumber)
+    if input_path.is_file():
+        resolved_output_path = _resolve_single_output_path(str(input_path), str(output_path))
+        cif_to_pdb(str(input_path), resolved_output_path, args.renumber)
     else:
-        if os.path.isfile(output_path):
+        if output_path.is_file():
             raise ValueError(
                 "When input_path is a directory, output_path must be a directory path."
             )
-        cif_to_pdb_in_parallel(input_path, output_path, args.renumber, args.n_cpu)
+        cif_to_pdb_in_parallel(str(input_path), str(output_path), args.renumber, args.n_cpu)
     LOGGER.info("Done.")
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+
     parser = argparse.ArgumentParser(description='Convert CIF files to PDB files.')
     parser.add_argument('input_path', type=str, help='Path to the input CIF file or directory.')
     parser.add_argument('output_path', type=str, help='Path to the output PDB file or directory.')
@@ -112,10 +106,5 @@ if __name__ == '__main__':
     parser.add_argument('--n_cpu', type=int, default=1, help='Number of CPUs to use for parallel processing.')
     args = parser.parse_args()
 
-    print("-----------------------------------------------------------------------------", flush=True)
-    print("User settings:", flush=True)
-    for key, value in vars(args).items():
-        print(f"{key}: {value}", flush=True)
-    print("-----------------------------------------------------------------------------", flush=True)
-
+    print_settings(args)
     main(args)

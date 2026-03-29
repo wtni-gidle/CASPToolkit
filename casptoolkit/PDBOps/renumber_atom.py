@@ -1,64 +1,46 @@
-"""
-Renumber atom serial numbers in PDB files.
-"""
+"""Renumber atom serial numbers in PDB files."""
+
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+from typing import List, Optional
+
 from Bio import PDB
-import os
-import tempfile
+
+from casptoolkit.PDBOps._utils import sort_chains
+
+LOGGER = logging.getLogger(__name__)
 
 
-def save_chain_as_structure(chain, output_file):
+def renumber_atom(
+    structure: PDB.Structure.Structure,
+    output_path: str,
+    chain_order: Optional[List[str]] = None,
+) -> None:
+    """Renumber atom serial numbers, resetting the counter for each chain.
+
+    Handles structures where atom serial numbers would exceed the PDB format
+    limit of 99999 by writing each chain separately with independent numbering.
+
+    Args:
+        structure: BioPython Structure object.
+        output_path: Path to the output PDB file.
+        chain_order: Explicit chain output order. If None, letter chains
+            precede digit chains, sorted lexicographically within each group.
     """
-    Save a given chain as a new PDB structure file.
-    """
-    new_structure = PDB.Structure.Structure("structure")
-    new_model = PDB.Model.Model(0)
+    out = Path(output_path).resolve()
+    out.parent.mkdir(parents=True, exist_ok=True)
 
-    new_chain = chain.copy()
-    new_model.add(new_chain)
-    new_structure.add(new_model)
+    chains = sort_chains(structure[0], chain_order)
 
     pdb_io = PDB.PDBIO()
-    pdb_io.set_structure(new_structure)
-    # This will automatically renumber the atom serial numbers.
-    pdb_io.save(output_file, preserve_atom_numbering=False)
-
-
-def merge_files(input_dir, output_file):
-    """
-    Directly merge individual PDB files into a single PDB file.
-    """
-    pdb_files = sorted(os.listdir(input_dir))
-    with open(output_file, 'w') as outfile:
-        for file in pdb_files:
-            path = os.path.join(input_dir, file)
-            with open(path, 'r') as infile:
-                for line in infile:
-                    if not line.startswith("END"):
-                        outfile.write(line)
-        outfile.write("END\n")
-
-
-def renumber_atom(structure, output_path, chain_order = None):
-    """
-    Renumber the atom serial numbers in the structure. Supports custom chain ordering.
-
-    This function handles large structures where atom serial numbers might exceed 
-    the PDB format limit of 100000. It renumbers the atoms sequentially within each chain,
-    ensuring that the numbering does not exceed this limit.
-    """
-    output_path = os.path.abspath(output_path)
-    directory = os.path.dirname(output_path)
-    os.makedirs(directory, exist_ok=True)
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        model = structure[0]
-        if chain_order:
-            sorted_chains = sorted(model, key=lambda chain: chain_order.index(chain.id))
-        else:
-            sorted_chains = sorted(model, key=lambda chain: (chain.id.isdigit(), chain.id))
-
-        for i, chain in enumerate(sorted_chains, start=1):
-            chain_file = os.path.join(temp_dir, f"{i:02}_{chain.id}.pdb")
-            save_chain_as_structure(chain, chain_file)
-
-        merge_files(temp_dir, output_path)
+    with open(out, "w") as fh:
+        for chain in chains:
+            tmp = PDB.Structure.Structure("s")
+            m = PDB.Model.Model(0)
+            m.add(chain.copy())
+            tmp.add(m)
+            pdb_io.set_structure(tmp)
+            pdb_io.save(fh, write_end=False, preserve_atom_numbering=False)
+        fh.write("END\n")
