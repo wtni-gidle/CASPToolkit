@@ -13,8 +13,8 @@ import os
 USALIGN_ENV_VAR = "CASPTOOLKIT_USALIGN_PATH"
 PHENIX_CLASHSCORE_ENV_VAR = "CASPTOOLKIT_PHENIX_CLASHSCORE_PATH"
 
-_DEFAULT_USALIGN_PATH = "/projects/bbgs/nwentao/tools/casp_tools/casp-rna/bins/us-align/USalign"
-_DEFAULT_PHENIX_CLASHSCORE_PATH = "/projects/bbgs/nwentao/tools/casp_tools/casp-rna/bins/phenix/phenix.clashscore"
+_DEFAULT_USALIGN_PATH = "xxx"
+_DEFAULT_PHENIX_CLASHSCORE_PATH = "xxx"
 
 
 def _resolve_path(env_var_name: str, default_path: str) -> str:

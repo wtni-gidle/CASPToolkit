@@ -9,7 +9,7 @@ from Bio.PDB.Chain import Chain
 from Bio.PDB.Model import Model
 
 
-def print_cli_settings(args: argparse.Namespace) -> None:
+def print_cli_settings(args) -> None:
     """Print user settings to stdout in a consistent format."""
     sep = "-" * 59
     print(sep, flush=True)

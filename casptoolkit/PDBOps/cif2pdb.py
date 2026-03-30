@@ -53,7 +53,7 @@ def cif_to_pdb_in_parallel(
     output_directory.mkdir(parents=True, exist_ok=True)
 
     total_args = []
-    for cif_file in sorted(input_directory.iterdir()):
+    for cif_file in input_directory.iterdir():
         if cif_file.suffix.lower() == ".cif":
             output_path = output_directory / f"{cif_file.stem}.pdb"
             total_args.append((cif_file.as_posix(), output_path.as_posix(), renumber))

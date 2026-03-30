@@ -109,7 +109,7 @@ def reassign_chain_id_in_parallel(
 
     task_args = [
         (str(in_dir / f), str(out_dir / f), chain_map, chain_order, renumber)
-        for f in sorted(in_dir.iterdir())
+        for f in in_dir.iterdir()
         if f.suffix == ".pdb"
     ]
 
@@ -142,7 +142,7 @@ def _parse_chain_mapping(chain_mapping: str) -> Dict[str, str]:
     return dict(zip(src_ids, dst_ids))
 
 
-def main(args: argparse.Namespace) -> None:
+def main(args) -> None:
     chain_map = _parse_chain_mapping(args.chain_mapping)
     chain_order = list(args.chain_order) if args.chain_order else None
 

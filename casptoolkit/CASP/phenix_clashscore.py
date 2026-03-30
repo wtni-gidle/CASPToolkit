@@ -1,56 +1,30 @@
+"""Calculate phenix clashscore for PDB files."""
+
+from __future__ import annotations
+
 import argparse
 import json
 import logging
-import os
 import re
 import shutil
 import subprocess
 from multiprocessing import Pool
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Optional
 
 from casptoolkit.config import PHENIX_CLASHSCORE_ENV_VAR, PHENIX_CLASHSCORE_PATH
+from casptoolkit.PDBOps._utils import print_cli_settings
 
-logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
 
 
-def _validate_n_cpu(n_cpu: int) -> None:
-    if n_cpu < 1:
-        raise ValueError(f"n_cpu must be >= 1, got {n_cpu}.")
-
-
-def _resolve_phenix_command() -> str:
-    """Resolve phenix.clashscore command from configured path or PATH."""
-    configured = PHENIX_CLASHSCORE_PATH
-
-    if os.path.sep in configured:
-        if os.path.isfile(configured) and os.access(configured, os.X_OK):
-            return configured
-        raise FileNotFoundError(
-            "Configured phenix.clashscore path is not executable: "
-            f"{configured}. Set {PHENIX_CLASHSCORE_ENV_VAR} to a valid executable."
-        )
-
-    resolved = shutil.which(configured)
-    if resolved:
-        return resolved
-
-    raise FileNotFoundError(
-        "Cannot find phenix.clashscore executable. "
-        f"Set {PHENIX_CLASHSCORE_ENV_VAR} or add '{configured}' to PATH."
-    )
-
-
-def calc_clashscore(file_path: str, phenix_command: str):
+def calc_clashscore(file_path: str, phenix_command: str) -> Optional[float]:
     """Calculate clashscore for a single PDB file."""
-    command = [
-        phenix_command,
-        file_path,
-        "nuclear=True",
-        "keep_hydrogens=True",
-    ]
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(
+        [phenix_command, file_path, "nuclear=True", "keep_hydrogens=True"],
+        capture_output=True,
+        text=True,
+    )
 
     if result.returncode != 0:
         LOGGER.error("Error processing %s: %s", file_path, result.stderr.strip())
@@ -66,91 +40,75 @@ def calc_clashscore(file_path: str, phenix_command: str):
         return None
 
     clashscore = float(match.group(1))
-    LOGGER.info("Clashscore for %s: %.3f", file_path, clashscore)
-
+    LOGGER.info("Clashscore for %s: %.2f", file_path, clashscore)
     return clashscore
 
 
-def wrapper(file_path: str, phenix_command: str):
-    clashscore = calc_clashscore(file_path, phenix_command)
-    return file_path, clashscore
+def _calc_clashscore_worker(file_path: str, phenix_command: str) -> tuple[str, Optional[float]]:
+    return Path(file_path).stem, calc_clashscore(file_path, phenix_command)
 
 
-def _collect_input_files(args: argparse.Namespace) -> List[str]:
-    if args.file:
-        file_path = Path(args.file).resolve()
-        if not file_path.is_file():
-            raise FileNotFoundError(f"Input file does not exist: {file_path}")
-        return [file_path.as_posix()]
+def calc_clashscore_in_parallel(
+    file_list: List[str],
+    phenix_command: str,
+    output_path: Optional[str] = None,
+    num_workers: int = 1,
+) -> None:
+    """Calculate clashscores for multiple PDB files.
 
-    if args.directory:
-        input_dir = Path(args.directory).resolve()
-        if not input_dir.is_dir():
-            raise NotADirectoryError(f"Input directory does not exist: {input_dir}")
-        files = sorted(str(p.resolve()) for p in input_dir.glob("*.pdb") if p.is_file())
-        if not files:
-            raise ValueError(f"No .pdb files found in directory: {input_dir}")
-        return files
+    Args:
+        file_list: List of PDB file paths.
+        phenix_command: Path to the phenix.clashscore executable.
+        output_path: If provided, write results to this JSON file.
+        num_workers: Number of parallel worker processes.
 
-    list_path = Path(args.list).resolve()
-    if not list_path.is_file():
-        raise FileNotFoundError(f"Input list file does not exist: {list_path}")
+    """
+    tasks = [(fp, phenix_command) for fp in file_list]
+    with Pool(num_workers) as pool:
+        results: Dict[str, Optional[float]] = dict(pool.starmap(_calc_clashscore_worker, tasks))
 
-    with list_path.open("r", encoding="utf-8") as file_list:
-        files = [line.strip() for line in file_list if line.strip()]
+    if output_path is not None:
+        out = Path(output_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        with out.open("w", encoding="utf-8") as fh:
+            json.dump(results, fh, indent=4)
 
-    if not files:
-        raise ValueError(f"Input list file is empty: {list_path}")
 
-    missing_files = [file for file in files if not Path(file).is_file()]
-    if missing_files:
+def main(args) -> None:
+    phenix_command = shutil.which(PHENIX_CLASHSCORE_PATH)
+    if not phenix_command:
         raise FileNotFoundError(
-            "Some files listed in input list do not exist. "
-            f"First missing file: {missing_files[0]}"
+            "Cannot find phenix.clashscore executable. "
+            f"Set {PHENIX_CLASHSCORE_ENV_VAR} or add '{PHENIX_CLASHSCORE_PATH}' to PATH."
         )
 
-    return [str(Path(file).resolve()) for file in files]
+    input_path = Path(args.input_path).resolve()
+    if not input_path.exists():
+        raise FileNotFoundError(f"Input path does not exist: {input_path}")
 
+    output_path = str(Path(args.output_path).resolve()) if args.output_path else None
 
-def process_in_parallel(file_list, output_path, n_cpu, phenix_command):
-    _validate_n_cpu(n_cpu)
-    tasks = [(file_path, phenix_command) for file_path in file_list]
-    with Pool(n_cpu) as pool:
-        results = pool.starmap(wrapper, tasks)
-    results = dict(results)
+    if input_path.is_file():
+        if output_path is not None:
+            LOGGER.warning("--output_path is ignored when input_path is a file.")
+        calc_clashscore(input_path.as_posix(), phenix_command)
+    else:
+        files = [p.as_posix() for p in input_path.glob("*.pdb") if p.is_file()]
+        if not files:
+            raise ValueError(f"No .pdb files found in directory: {input_path}")
+        calc_clashscore_in_parallel(files, phenix_command, output_path, args.num_workers)
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=4)
-
-
-def main(args):
-    phenix_command = _resolve_phenix_command()
-    files = _collect_input_files(args)
-
-    output_path = os.path.abspath(args.output_path)
-    dirname = os.path.dirname(output_path)
-    os.makedirs(dirname, exist_ok=True)
-
-    process_in_parallel(files, output_path, args.n_cpu, phenix_command)
+    LOGGER.info("Done.")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Calculate phenix clashscore.')
-    parser.add_argument('-f', '--file', type=str, help='Single PDB file to process.')
-    parser.add_argument('-d', '--directory', type=str, help='Directory containing PDB files.')
-    parser.add_argument('-l', '--list', type=str, help='File containing list of PDB files.')
-    parser.add_argument('output_path', type=str, help='Path to the output file.')
-    parser.add_argument('--n_cpu', type=int, default=1, help='Number of CPUs to use for parallel processing.')
+    logging.basicConfig(level=logging.INFO)
+
+    parser = argparse.ArgumentParser(description="Calculate phenix clashscore for PDB files.")
+    parser.add_argument("input_path", type=str, help="Path to a PDB file or directory of PDB files.")
+    parser.add_argument("--output_path", type=str, default=None, help="Path to the output JSON file. Effective only when input_path is a directory.")
+    parser.add_argument("--num_workers", type=int, default=1, help="Number of worker processes (default: 1).")
     args = parser.parse_args()
 
-    print("-----------------------------------------------------------------------------", flush=True)
-    print("User settings:", flush=True)
-    for key, value in vars(args).items():
-        print(f"{key}: {value}", flush=True)
-    print("-----------------------------------------------------------------------------", flush=True)
-
-    options = [args.file, args.directory, args.list]
-    if options.count(None) != 2:
-        raise ValueError("You must specify exactly one of --file, --directory, or --list.")
-
+    print_cli_settings(args)
     main(args)

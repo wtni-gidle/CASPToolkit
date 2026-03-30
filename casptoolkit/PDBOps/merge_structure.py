@@ -62,7 +62,7 @@ def merge_pdb_files(
     LOGGER.info("Merged %d files into %s", len(input_files), out)
 
 
-def main(args: argparse.Namespace) -> None:
+def main(args) -> None:
     input_files = sorted(Path(args.input_dir).iterdir())
     input_files = [str(f) for f in input_files if f.suffix == ".pdb"]
     merge_pdb_files(input_files, args.output_file, args.renumber_atoms)
