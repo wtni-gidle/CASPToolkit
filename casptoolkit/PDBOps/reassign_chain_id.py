@@ -176,9 +176,9 @@ if __name__ == "__main__":
     parser.add_argument("input_path", type=str, help="Path to the input PDB file or directory.")
     parser.add_argument("output_path", type=str, help="Path to the output PDB file or directory.")
     parser.add_argument("chain_mapping", type=str, help="Chain ID mapping, e.g. 'ABC:DEF' maps A→D, B→E, C→F.")
-    parser.add_argument("--renumber_atoms", action="store_true", help="Renumber atom serial numbers.")
-    parser.add_argument("--chain_order", type=str, default=None, help="Output chain order.")
-    parser.add_argument("--num_workers", type=int, default=1, help="Number of worker processes (default: 1).")
+    parser.add_argument("--renumber-atoms", action="store_true", help="Renumber atom serial numbers.")
+    parser.add_argument("--chain-order", type=str, default=None, help="Output chain order.")
+    parser.add_argument("--num-workers", type=int, default=1, help="Number of worker processes (default: 1).")
     args = parser.parse_args()
 
     print_cli_settings(args)

@@ -102,9 +102,9 @@ if __name__ == "__main__":
     parser.add_argument("source_file", type=str, help="Source homooligomer PDB/CIF file.")
     parser.add_argument("target_file", type=str, help="Target homooligomer PDB/CIF file.")
     parser.add_argument("output_dir", type=str, help="Output directory for superposed structures.")
-    parser.add_argument("--renumber_atoms", action="store_true", help="Renumber atoms in the merged structure.")
-    parser.add_argument("--extra_args", type=str, default=None, help="Additional arguments for USalign, e.g. '-mm 1 -ter 0'.")
-    parser.add_argument("--output_prefix", type=str, default="sup_", help="Prefix for output file names (default: sup_).")
+    parser.add_argument("--renumber-atoms", action="store_true", help="Renumber atoms in the merged structure.")
+    parser.add_argument("--extra-args", type=str, default=None, help="Additional arguments for USalign, e.g. '-mm 1 -ter 0'.")
+    parser.add_argument("--output-prefix", type=str, default="sup_", help="Prefix for output file names (default: sup_).")
     args = parser.parse_args()
 
     print_cli_settings(args)

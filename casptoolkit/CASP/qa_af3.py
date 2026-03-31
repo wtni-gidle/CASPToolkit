@@ -184,11 +184,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input_dir", help="The directory containing the zip files to be processed")
     parser.add_argument("output_dir", help="The directory where the processed files will be saved")
-    parser.add_argument('--no_renumber', action='store_true', help='Do not renumber atoms in the structure.')
-    parser.add_argument('--no_clash', action='store_true', help=
+    parser.add_argument('--no-renumber', action='store_true', help='Do not renumber atoms in the structure.')
+    parser.add_argument('--no-clash', action='store_true', help=
                         'Do not include structures with clashes in the final ranking.')
-    parser.add_argument('--only_ptm', action='store_true', help='Only calculate the ptm score.')
-    parser.add_argument('--n_cpu', type=int, default=1, help='Number of CPUs to use for processing.')
+    parser.add_argument('--only-ptm', action='store_true', help='Only calculate the ptm score.')
+    parser.add_argument('--n-cpu', type=int, default=1, help='Number of CPUs to use for processing.')
     args = parser.parse_args()
 
     print("-----------------------------------------------------------------------------", flush=True)

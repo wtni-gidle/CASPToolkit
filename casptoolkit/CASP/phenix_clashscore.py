@@ -90,7 +90,7 @@ def main(args) -> None:
 
     if input_path.is_file():
         if output_path is not None:
-            LOGGER.warning("--output_path is ignored when input_path is a file.")
+            LOGGER.warning("--output-path is ignored when input_path is a file.")
         calc_clashscore(input_path.as_posix(), phenix_command)
     else:
         files = [p.as_posix() for p in input_path.glob("*.pdb") if p.is_file()]
@@ -106,8 +106,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Calculate phenix clashscore for PDB files.")
     parser.add_argument("input_path", type=str, help="Path to a PDB file or directory of PDB files.")
-    parser.add_argument("--output_path", type=str, default=None, help="Path to the output JSON file. Effective only when input_path is a directory.")
-    parser.add_argument("--num_workers", type=int, default=1, help="Number of worker processes (default: 1).")
+    parser.add_argument("--output-path", type=str, default=None, help="Path to the output JSON file. Effective only when input_path is a directory.")
+    parser.add_argument("--num-workers", type=int, default=1, help="Number of worker processes (default: 1).")
     args = parser.parse_args()
 
     print_cli_settings(args)

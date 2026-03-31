@@ -155,14 +155,14 @@ if __name__ == "__main__":
     )
     parser.add_argument("model_dir", type=str, help="Directory containing model PDB/CIF files.")
     parser.add_argument("reference", type=str, help="Reference PDB file.")
-    parser.add_argument("--sup_dir", type=str, default=None, help="Directory to save superposed structures.")
-    parser.add_argument("--output_file", type=str, default=None, help="Output CSV file for TM-score results.")
-    parser.add_argument("--extra_args", type=str, default=None, help="Additional arguments for USalign.")
-    parser.add_argument("--num_workers", type=int, default=1, help="Number of worker processes (default: 1).")
+    parser.add_argument("--sup-dir", type=str, default=None, help="Directory to save superposed structures.")
+    parser.add_argument("--output-file", type=str, default=None, help="Output CSV file for TM-score results.")
+    parser.add_argument("--extra-args", type=str, default=None, help="Additional arguments for USalign.")
+    parser.add_argument("--num-workers", type=int, default=1, help="Number of worker processes (default: 1).")
     args = parser.parse_args()
 
     if args.output_file is None and args.sup_dir is None:
-        parser.error("Specify at least one of --output_file or --sup_dir.")
+        parser.error("Specify at least one of --output-file or --sup-dir.")
 
     print_cli_settings(args)
     main(args)

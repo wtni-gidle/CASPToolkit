@@ -27,19 +27,19 @@ export CASPTOOLKIT_PHENIX_CLASHSCORE_PATH=/path/to/phenix.clashscore
 
 ```bash
 python casptoolkit/PDBOps/cif2pdb.py input.cif output.pdb
-python casptoolkit/PDBOps/cif2pdb.py input_dir/ output_dir/ --num_workers 8
+python casptoolkit/PDBOps/cif2pdb.py input_dir/ output_dir/ --num-workers 8
 ```
 
 2) 合并 PDB
 
 ```bash
-python casptoolkit/PDBOps/merge_structure.py input_dir/ merged.pdb --renumber_atoms
+python casptoolkit/PDBOps/merge_structure.py input_dir/ merged.pdb --renumber-atoms
 ```
 
 3) 链 ID 重映射
 
 ```bash
-python casptoolkit/PDBOps/reassign_chain_id.py input.pdb output.pdb ABC:DEF --renumber_atoms
+python casptoolkit/PDBOps/reassign_chain_id.py input.pdb output.pdb ABC:DEF --renumber-atoms
 ```
 
 ### CASP
@@ -47,30 +47,30 @@ python casptoolkit/PDBOps/reassign_chain_id.py input.pdb output.pdb ABC:DEF --re
 1) clashscore
 
 ```bash
-python casptoolkit/CASP/phenix_clashscore.py model_dir/ --output_path results.json --num_workers 8
+python casptoolkit/CASP/phenix_clashscore.py model_dir/ --output-path results.json --num-workers 8
 ```
 
-说明：`--output_path` 仅在 `input_path` 为目录时生效。
+说明：`--output-path` 仅在 `input_path` 为目录时生效。
 
 2) 模板叠合与 TM-score
 
 ```bash
-python casptoolkit/CASP/sup_template.py model_dir/ reference.pdb --output_file tmscore.csv --sup_dir sup/ --num_workers 8
+python casptoolkit/CASP/sup_template.py model_dir/ reference.pdb --output-file tmscore.csv --sup-dir sup/ --num-workers 8
 ```
 
-说明：`--output_file` 与 `--sup_dir` 至少提供一个。
+说明：`--output-file` 与 `--sup-dir` 至少提供一个。
 
 3) 逐目标叠合并组装
 
 ```bash
-python casptoolkit/CASP/sup_assemble.py source.pdb output.pdb --target_dir target_dir/ --renumber_atoms
-python casptoolkit/CASP/sup_assemble.py source.pdb output.pdb --target_file target_complex.pdb --renumber_atoms
+python casptoolkit/CASP/sup_assemble.py source.pdb output.pdb --target-dir target_dir/ --renumber-atoms
+python casptoolkit/CASP/sup_assemble.py source.pdb output.pdb --target-file target_complex.pdb --renumber-atoms
 ```
 
 4) 同聚体叠合（An -> Am）
 
 ```bash
-python casptoolkit/CASP/sup_homooligo.py source_An.pdb target_Am.pdb output_dir/ --output_prefix sup_
+python casptoolkit/CASP/sup_homooligo.py source_An.pdb target_Am.pdb output_dir/ --output-prefix sup_
 ```
 
 5) AF3 QA 流程
@@ -82,4 +82,4 @@ python casptoolkit/CASP/qa_af3.py -h
 ## 建议
 
 - 优先使用 `-h` 查看脚本参数。
-- 并行参数从小值开始（如 `--num_workers 2`），根据机器资源调整。
+- 并行参数从小值开始（如 `--num-workers 2`），根据机器资源调整。

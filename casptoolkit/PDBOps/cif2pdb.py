@@ -107,8 +107,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert CIF files to PDB files.')
     parser.add_argument('input_path', type=str, help='Path to the input CIF file or directory.')
     parser.add_argument('output_path', type=str, help='Path to the output PDB file or directory.')
-    parser.add_argument('--renumber_atoms', action='store_true', help='Renumber atoms in the structure.')
-    parser.add_argument('--num_workers', type=int, default=1, help='Number of worker processes.')
+    parser.add_argument('--renumber-atoms', action='store_true', help='Renumber atoms in the structure.')
+    parser.add_argument('--num-workers', type=int, default=1, help='Number of worker processes.')
     args = parser.parse_args()
 
     print_cli_settings(args)

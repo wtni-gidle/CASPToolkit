@@ -155,17 +155,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
             "Superimpose a source structure onto target structures and assemble the results. "
-            "Targets can be supplied as a directory of PDB files (--target_dir) or as a single "
-            "structure file that will be split into chains automatically (--target_file)."
+            "Targets can be supplied as a directory of PDB files (--target-dir) or as a single "
+            "structure file that will be split into chains automatically (--target-file)."
         )
     )
     parser.add_argument("source_file", type=str, help="Path to the source PDB file.")
     parser.add_argument("output_path", type=str, help="Path to save the merged PDB file.")
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--target_dir", type=str, help="Directory containing target PDB files.")
-    group.add_argument("--target_file", type=str, help="Target structure file to split into chains first.")
-    parser.add_argument("--renumber_atoms", action="store_true", help="Renumber atoms in the merged structure.")
-    parser.add_argument("--extra_args", type=str, default=None, help="Additional arguments for USalign, e.g. '-mm 1 -ter 0'.")
+    group.add_argument("--target-dir", type=str, help="Directory containing target PDB files.")
+    group.add_argument("--target-file", type=str, help="Target structure file to split into chains first.")
+    parser.add_argument("--renumber-atoms", action="store_true", help="Renumber atoms in the merged structure.")
+    parser.add_argument("--extra-args", type=str, default=None, help="Additional arguments for USalign, e.g. '-mm 1 -ter 0'.")
     args = parser.parse_args()
 
     print_cli_settings(args)

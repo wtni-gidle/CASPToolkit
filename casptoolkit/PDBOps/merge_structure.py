@@ -74,7 +74,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Merge multiple PDB files into one. This will reassign chain IDs automatically.")
     parser.add_argument("input_dir", help="Input directory containing PDB files.")
     parser.add_argument("output_file", help="Output merged PDB file path.")
-    parser.add_argument("--renumber_atoms", action="store_true", help="Renumber atom serial numbers.")
+    parser.add_argument("--renumber-atoms", action="store_true", help="Renumber atom serial numbers.")
     args = parser.parse_args()
 
     print_cli_settings(args)
