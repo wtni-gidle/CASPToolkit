@@ -21,16 +21,17 @@ COMMANDS = {
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="casp", add_help=True)
+    parser = argparse.ArgumentParser(prog="casp", add_help=False)
     parser.add_argument("command", nargs="?", help="subcommand")
 
     args, rest = parser.parse_known_args()
 
     if args.command is None:
-        parser.print_help()
+        print("usage: casp [-h] <command>")
         print("\nAvailable commands:")
         for k in COMMANDS:
             print(f"  {k}")
+        print("\nUse 'casp <command> -h' for help on a specific command.")
         sys.exit(0)
 
     if args.command not in COMMANDS:
@@ -42,5 +43,4 @@ def main():
 
     cmd = [sys.executable, str(script)] + rest
 
-    result = subprocess.run(cmd)
-    sys.exit(result.returncode)
+    sys.exit(subprocess.call(cmd))
