@@ -108,9 +108,9 @@ def reassign_chain_id_in_parallel(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     task_args = [
-        (str(in_dir / f), str(out_dir / f), chain_map, chain_order, renumber)
+        (str(f), str(out_dir / f.name), chain_map, chain_order, renumber)
         for f in in_dir.iterdir()
-        if f.suffix == ".pdb"
+        if f.is_file() and f.suffix == ".pdb"
     ]
 
     with Pool(n_cpu) as pool:
