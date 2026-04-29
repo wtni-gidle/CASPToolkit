@@ -65,6 +65,7 @@ def superpose_in_parallel(
     sup_dir: Optional[str] = None,
     extra_args: Optional[List[str]] = None,
     num_workers: int = 1,
+    file_list: Optional[str] = None,
 ) -> Dict[str, Optional[float]]:
     """Superpose all PDB/CIF files in *model_dir* to *reference* in parallel.
 
@@ -75,11 +76,17 @@ def superpose_in_parallel(
         sup_dir: If provided, write superposed structures here.
         extra_args: Additional arguments forwarded to USalign.
         num_workers: Number of parallel worker processes.
+        file_list: If provided, read filenames from this file (one per line).
 
     Returns:
         Mapping of model stem to TM-score (None if alignment failed).
     """
-    models = [p.as_posix() for p in Path(model_dir).iterdir() if p.suffix.lower() in (".pdb", ".cif")]
+    if file_list:
+        with open(file_list) as f:
+            filenames = [line.strip() for line in f if line.strip()]
+        models = [(Path(model_dir) / fn).as_posix() for fn in filenames]
+    else:
+        models = [p.as_posix() for p in Path(model_dir).iterdir() if p.suffix.lower() in (".pdb", ".cif")]
     if not models:
         raise ValueError(f"No .pdb or .cif files found in model directory: {model_dir}")
 
@@ -130,6 +137,7 @@ def main(args) -> None:
         sup_dir.as_posix() if sup_dir else None,
         extra_args,
         args.num_workers,
+        args.list,
     )
 
     if sup_dir:
@@ -159,6 +167,7 @@ if __name__ == "__main__":
     parser.add_argument("--output-file", type=str, default=None, help="Output CSV file for TM-score results.")
     parser.add_argument("--extra-args", type=str, default=None, help="Additional arguments for USalign.")
     parser.add_argument("--num-workers", type=int, default=1, help="Number of worker processes (default: 1).")
+    parser.add_argument("--list", type=str, default=None, help="File containing list of filenames to process (one per line).")
     args = parser.parse_args()
 
     if args.output_file is None and args.sup_dir is None:
