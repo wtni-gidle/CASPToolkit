@@ -142,7 +142,8 @@ def main(args) -> None:
 
     if sup_dir:
         for pml in sup_dir.glob("*.pml"):
-            pml.unlink()
+            if pml.is_file():
+                pml.unlink()
 
     if args.output_file is None:
         return
